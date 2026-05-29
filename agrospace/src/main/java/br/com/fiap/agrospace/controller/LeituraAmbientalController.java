@@ -5,10 +5,15 @@ import br.com.fiap.agrospace.dto.response.LeituraAmbientalResponse;
 import br.com.fiap.agrospace.service.LeituraAmbientalService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
 @RequestMapping("/leituras-ambientais")
@@ -19,31 +24,52 @@ public class LeituraAmbientalController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public LeituraAmbientalResponse criar(@RequestBody @Valid LeituraAmbientalRequest request) {
-        return leituraAmbientalService.criar(request);
+    public EntityModel<LeituraAmbientalResponse> criar(@RequestBody @Valid LeituraAmbientalRequest request) {
+        LeituraAmbientalResponse response = leituraAmbientalService.criar(request);
+        return adicionarLinks(response);
     }
 
     @GetMapping
-    public List<LeituraAmbientalResponse> listar() {
-        return leituraAmbientalService.listar();
+    public CollectionModel<EntityModel<LeituraAmbientalResponse>> listar() {
+        List<EntityModel<LeituraAmbientalResponse>> leituras = leituraAmbientalService.listar()
+                .stream()
+                .map(this::adicionarLinks)
+                .toList();
+
+        return CollectionModel.of(
+                leituras,
+                linkTo(methodOn(LeituraAmbientalController.class).listar()).withSelfRel()
+        );
     }
 
     @GetMapping("/{id}")
-    public LeituraAmbientalResponse buscarPorId(@PathVariable Long id) {
-        return leituraAmbientalService.buscarPorId(id);
+    public EntityModel<LeituraAmbientalResponse> buscarPorId(@PathVariable Long id) {
+        LeituraAmbientalResponse response = leituraAmbientalService.buscarPorId(id);
+        return adicionarLinks(response);
     }
 
     @PutMapping("/{id}")
-    public LeituraAmbientalResponse atualizar(
+    public EntityModel<LeituraAmbientalResponse> atualizar(
             @PathVariable Long id,
             @RequestBody @Valid LeituraAmbientalRequest request
     ) {
-        return leituraAmbientalService.atualizar(id, request);
+        LeituraAmbientalResponse response = leituraAmbientalService.atualizar(id, request);
+        return adicionarLinks(response);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deletar(@PathVariable Long id) {
         leituraAmbientalService.deletar(id);
+    }
+
+    private EntityModel<LeituraAmbientalResponse> adicionarLinks(LeituraAmbientalResponse response) {
+        return EntityModel.of(
+                response,
+                linkTo(methodOn(LeituraAmbientalController.class).buscarPorId(response.id())).withSelfRel(),
+                linkTo(methodOn(LeituraAmbientalController.class).listar()).withRel("todas-as-leituras"),
+                linkTo(methodOn(AreaAgricolaController.class).buscarPorId(response.areaAgricolaId())).withRel("area-agricola"),
+                linkTo(methodOn(SateliteController.class).buscarPorId(response.sateliteId())).withRel("satelite")
+        );
     }
 }

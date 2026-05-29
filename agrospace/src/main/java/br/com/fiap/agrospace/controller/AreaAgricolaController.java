@@ -5,10 +5,15 @@ import br.com.fiap.agrospace.dto.response.AreaAgricolaResponse;
 import br.com.fiap.agrospace.service.AreaAgricolaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
 @RequestMapping("/areas-agricolas")
@@ -19,31 +24,51 @@ public class AreaAgricolaController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public AreaAgricolaResponse criar(@RequestBody @Valid AreaAgricolaRequest request) {
-        return areaAgricolaService.criar(request);
+    public EntityModel<AreaAgricolaResponse> criar(@RequestBody @Valid AreaAgricolaRequest request) {
+        AreaAgricolaResponse response = areaAgricolaService.criar(request);
+        return adicionarLinks(response);
     }
 
     @GetMapping
-    public List<AreaAgricolaResponse> listar() {
-        return areaAgricolaService.listar();
+    public CollectionModel<EntityModel<AreaAgricolaResponse>> listar() {
+        List<EntityModel<AreaAgricolaResponse>> areas = areaAgricolaService.listar()
+                .stream()
+                .map(this::adicionarLinks)
+                .toList();
+
+        return CollectionModel.of(
+                areas,
+                linkTo(methodOn(AreaAgricolaController.class).listar()).withSelfRel()
+        );
     }
 
     @GetMapping("/{id}")
-    public AreaAgricolaResponse buscarPorId(@PathVariable Long id) {
-        return areaAgricolaService.buscarPorId(id);
+    public EntityModel<AreaAgricolaResponse> buscarPorId(@PathVariable Long id) {
+        AreaAgricolaResponse response = areaAgricolaService.buscarPorId(id);
+        return adicionarLinks(response);
     }
 
     @PutMapping("/{id}")
-    public AreaAgricolaResponse atualizar(
+    public EntityModel<AreaAgricolaResponse> atualizar(
             @PathVariable Long id,
             @RequestBody @Valid AreaAgricolaRequest request
     ) {
-        return areaAgricolaService.atualizar(id, request);
+        AreaAgricolaResponse response = areaAgricolaService.atualizar(id, request);
+        return adicionarLinks(response);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deletar(@PathVariable Long id) {
         areaAgricolaService.deletar(id);
+    }
+
+    private EntityModel<AreaAgricolaResponse> adicionarLinks(AreaAgricolaResponse response) {
+        return EntityModel.of(
+                response,
+                linkTo(methodOn(AreaAgricolaController.class).buscarPorId(response.id())).withSelfRel(),
+                linkTo(methodOn(AreaAgricolaController.class).listar()).withRel("todas-as-areas-agricolas"),
+                linkTo(methodOn(FazendaController.class).buscarPorId(response.fazendaId())).withRel("fazenda")
+        );
     }
 }
