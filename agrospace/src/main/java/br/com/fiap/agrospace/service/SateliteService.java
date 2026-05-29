@@ -3,6 +3,7 @@ package br.com.fiap.agrospace.service;
 import br.com.fiap.agrospace.dto.request.SateliteRequest;
 import br.com.fiap.agrospace.dto.response.SateliteResponse;
 import br.com.fiap.agrospace.entity.Satelite;
+import br.com.fiap.agrospace.exception.ResourceNotFoundException;
 import br.com.fiap.agrospace.repository.SateliteRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -56,8 +57,8 @@ public class SateliteService {
 
     public Satelite buscarEntidadePorId(Long id) {
         return sateliteRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Satélite não encontrado"));
-    }
+            .orElseThrow(() -> new ResourceNotFoundException("Satélite não encontrado"
+));    }
 
     private SateliteResponse toResponse(Satelite satelite) {
         return new SateliteResponse(

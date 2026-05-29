@@ -3,6 +3,7 @@ package br.com.fiap.agrospace.service;
 import br.com.fiap.agrospace.dto.request.FazendaRequest;
 import br.com.fiap.agrospace.dto.response.FazendaResponse;
 import br.com.fiap.agrospace.entity.Fazenda;
+import br.com.fiap.agrospace.exception.ResourceNotFoundException;
 import br.com.fiap.agrospace.repository.FazendaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -56,8 +57,7 @@ public class FazendaService {
 
     public Fazenda buscarEntidadePorId(Long id) {
         return fazendaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Fazenda não encontrada"));
-    }
+            .orElseThrow(() -> new ResourceNotFoundException("Fazenda não encontrada"));    }
 
     private FazendaResponse toResponse(Fazenda fazenda) {
         return new FazendaResponse(

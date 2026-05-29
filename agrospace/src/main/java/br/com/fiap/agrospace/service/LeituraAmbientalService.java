@@ -5,6 +5,7 @@ import br.com.fiap.agrospace.dto.response.LeituraAmbientalResponse;
 import br.com.fiap.agrospace.entity.AreaAgricola;
 import br.com.fiap.agrospace.entity.LeituraAmbiental;
 import br.com.fiap.agrospace.entity.Satelite;
+import br.com.fiap.agrospace.exception.ResourceNotFoundException;
 import br.com.fiap.agrospace.repository.LeituraAmbientalRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -73,8 +74,7 @@ public class LeituraAmbientalService {
 
     public LeituraAmbiental buscarEntidadePorId(Long id) {
         return leituraAmbientalRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Leitura ambiental não encontrada"));
-    }
+            .orElseThrow(() -> new ResourceNotFoundException("Leitura ambiental não encontrada"));    }
 
     private String calcularNivelRisco(Double temperatura, Double umidade, Double indiceVegetacao) {
         if (temperatura >= 38 || umidade <= 25 || indiceVegetacao <= 0.3) {
