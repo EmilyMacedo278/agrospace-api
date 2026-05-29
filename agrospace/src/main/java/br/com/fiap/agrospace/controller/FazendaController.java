@@ -5,12 +5,11 @@ import br.com.fiap.agrospace.dto.response.FazendaResponse;
 import br.com.fiap.agrospace.service.FazendaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.hateoas.CollectionModel;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
@@ -30,16 +29,9 @@ public class FazendaController {
     }
 
     @GetMapping
-    public CollectionModel<EntityModel<FazendaResponse>> listar() {
-        List<EntityModel<FazendaResponse>> fazendas = fazendaService.listar()
-                .stream()
-                .map(this::adicionarLinks)
-                .toList();
-
-        return CollectionModel.of(
-                fazendas,
-                linkTo(methodOn(FazendaController.class).listar()).withSelfRel()
-        );
+    public Page<EntityModel<FazendaResponse>> listar(Pageable pageable) {
+        return fazendaService.listar(pageable)
+                .map(this::adicionarLinks);
     }
 
     @GetMapping("/{id}")
@@ -67,7 +59,7 @@ public class FazendaController {
         return EntityModel.of(
                 response,
                 linkTo(methodOn(FazendaController.class).buscarPorId(response.id())).withSelfRel(),
-                linkTo(methodOn(FazendaController.class).listar()).withRel("todas-as-fazendas")
+                linkTo(methodOn(FazendaController.class).listar(null)).withRel("todas-as-fazendas")
         );
     }
 }

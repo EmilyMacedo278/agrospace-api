@@ -8,10 +8,13 @@ import br.com.fiap.agrospace.entity.Satelite;
 import br.com.fiap.agrospace.exception.ResourceNotFoundException;
 import br.com.fiap.agrospace.repository.LeituraAmbientalRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +24,7 @@ public class LeituraAmbientalService {
     private final AreaAgricolaService areaAgricolaService;
     private final SateliteService sateliteService;
 
+    @CacheEvict(value = {"leiturasAmbientais", "leituraAmbiental"}, allEntries = true)
     public LeituraAmbientalResponse criar(LeituraAmbientalRequest request) {
         AreaAgricola area = areaAgricolaService.buscarEntidadePorId(request.areaAgricolaId());
         Satelite satelite = sateliteService.buscarEntidadePorId(request.sateliteId());
@@ -39,18 +43,19 @@ public class LeituraAmbientalService {
         return toResponse(salva);
     }
 
-    public List<LeituraAmbientalResponse> listar() {
-        return leituraAmbientalRepository.findAll()
-                .stream()
-                .map(this::toResponse)
-                .toList();
+    @Cacheable(value = "leiturasAmbientais")
+    public Page<LeituraAmbientalResponse> listar(Pageable pageable) {
+        return leituraAmbientalRepository.findAll(pageable)
+                .map(this::toResponse);
     }
 
+    @Cacheable(value = "leituraAmbiental", key = "#id")
     public LeituraAmbientalResponse buscarPorId(Long id) {
         LeituraAmbiental leitura = buscarEntidadePorId(id);
         return toResponse(leitura);
     }
 
+    @CacheEvict(value = {"leiturasAmbientais", "leituraAmbiental"}, allEntries = true)
     public LeituraAmbientalResponse atualizar(Long id, LeituraAmbientalRequest request) {
         LeituraAmbiental leitura = buscarEntidadePorId(id);
         AreaAgricola area = areaAgricolaService.buscarEntidadePorId(request.areaAgricolaId());
@@ -67,6 +72,7 @@ public class LeituraAmbientalService {
         return toResponse(atualizada);
     }
 
+    @CacheEvict(value = {"leiturasAmbientais", "leituraAmbiental"}, allEntries = true)
     public void deletar(Long id) {
         LeituraAmbiental leitura = buscarEntidadePorId(id);
         leituraAmbientalRepository.delete(leitura);
@@ -74,7 +80,8 @@ public class LeituraAmbientalService {
 
     public LeituraAmbiental buscarEntidadePorId(Long id) {
         return leituraAmbientalRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Leitura ambiental não encontrada"));    }
+                .orElseThrow(() -> new ResourceNotFoundException("Leitura ambiental não encontrada"));
+    }
 
     private String calcularNivelRisco(Double temperatura, Double umidade, Double indiceVegetacao) {
         if (temperatura >= 38 || umidade <= 25 || indiceVegetacao <= 0.3) {

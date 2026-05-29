@@ -7,9 +7,11 @@ import br.com.fiap.agrospace.entity.Localizacao;
 import br.com.fiap.agrospace.exception.ResourceNotFoundException;
 import br.com.fiap.agrospace.repository.FazendaRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -17,6 +19,7 @@ public class FazendaService {
 
     private final FazendaRepository fazendaRepository;
 
+    @CacheEvict(value = {"fazendas", "fazenda"}, allEntries = true)
     public FazendaResponse criar(FazendaRequest request) {
         Fazenda fazenda = Fazenda.builder()
                 .nome(request.nome())
@@ -32,18 +35,19 @@ public class FazendaService {
         return toResponse(salva);
     }
 
-    public List<FazendaResponse> listar() {
-        return fazendaRepository.findAll()
-                .stream()
-                .map(this::toResponse)
-                .toList();
+    @Cacheable(value = "fazendas")
+    public Page<FazendaResponse> listar(Pageable pageable) {
+        return fazendaRepository.findAll(pageable)
+                .map(this::toResponse);
     }
 
+    @Cacheable(value = "fazenda", key = "#id")
     public FazendaResponse buscarPorId(Long id) {
         Fazenda fazenda = buscarEntidadePorId(id);
         return toResponse(fazenda);
     }
 
+    @CacheEvict(value = {"fazendas", "fazenda"}, allEntries = true)
     public FazendaResponse atualizar(Long id, FazendaRequest request) {
         Fazenda fazenda = buscarEntidadePorId(id);
 
@@ -59,6 +63,7 @@ public class FazendaService {
         return toResponse(atualizada);
     }
 
+    @CacheEvict(value = {"fazendas", "fazenda"}, allEntries = true)
     public void deletar(Long id) {
         Fazenda fazenda = buscarEntidadePorId(id);
         fazendaRepository.delete(fazenda);

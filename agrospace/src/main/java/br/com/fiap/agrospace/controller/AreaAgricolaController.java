@@ -5,12 +5,11 @@ import br.com.fiap.agrospace.dto.response.AreaAgricolaResponse;
 import br.com.fiap.agrospace.service.AreaAgricolaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.hateoas.CollectionModel;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
@@ -30,16 +29,9 @@ public class AreaAgricolaController {
     }
 
     @GetMapping
-    public CollectionModel<EntityModel<AreaAgricolaResponse>> listar() {
-        List<EntityModel<AreaAgricolaResponse>> areas = areaAgricolaService.listar()
-                .stream()
-                .map(this::adicionarLinks)
-                .toList();
-
-        return CollectionModel.of(
-                areas,
-                linkTo(methodOn(AreaAgricolaController.class).listar()).withSelfRel()
-        );
+    public Page<EntityModel<AreaAgricolaResponse>> listar(Pageable pageable) {
+        return areaAgricolaService.listar(pageable)
+                .map(this::adicionarLinks);
     }
 
     @GetMapping("/{id}")
@@ -67,7 +59,7 @@ public class AreaAgricolaController {
         return EntityModel.of(
                 response,
                 linkTo(methodOn(AreaAgricolaController.class).buscarPorId(response.id())).withSelfRel(),
-                linkTo(methodOn(AreaAgricolaController.class).listar()).withRel("todas-as-areas-agricolas"),
+                linkTo(methodOn(AreaAgricolaController.class).listar(null)).withRel("todas-as-areas-agricolas"),
                 linkTo(methodOn(FazendaController.class).buscarPorId(response.fazendaId())).withRel("fazenda")
         );
     }

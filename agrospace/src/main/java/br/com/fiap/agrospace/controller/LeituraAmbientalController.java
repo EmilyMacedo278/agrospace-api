@@ -5,12 +5,11 @@ import br.com.fiap.agrospace.dto.response.LeituraAmbientalResponse;
 import br.com.fiap.agrospace.service.LeituraAmbientalService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.hateoas.CollectionModel;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
@@ -30,16 +29,9 @@ public class LeituraAmbientalController {
     }
 
     @GetMapping
-    public CollectionModel<EntityModel<LeituraAmbientalResponse>> listar() {
-        List<EntityModel<LeituraAmbientalResponse>> leituras = leituraAmbientalService.listar()
-                .stream()
-                .map(this::adicionarLinks)
-                .toList();
-
-        return CollectionModel.of(
-                leituras,
-                linkTo(methodOn(LeituraAmbientalController.class).listar()).withSelfRel()
-        );
+    public Page<EntityModel<LeituraAmbientalResponse>> listar(Pageable pageable) {
+        return leituraAmbientalService.listar(pageable)
+                .map(this::adicionarLinks);
     }
 
     @GetMapping("/{id}")
@@ -67,7 +59,7 @@ public class LeituraAmbientalController {
         return EntityModel.of(
                 response,
                 linkTo(methodOn(LeituraAmbientalController.class).buscarPorId(response.id())).withSelfRel(),
-                linkTo(methodOn(LeituraAmbientalController.class).listar()).withRel("todas-as-leituras"),
+                linkTo(methodOn(LeituraAmbientalController.class).listar(null)).withRel("todas-as-leituras"),
                 linkTo(methodOn(AreaAgricolaController.class).buscarPorId(response.areaAgricolaId())).withRel("area-agricola"),
                 linkTo(methodOn(SateliteController.class).buscarPorId(response.sateliteId())).withRel("satelite")
         );

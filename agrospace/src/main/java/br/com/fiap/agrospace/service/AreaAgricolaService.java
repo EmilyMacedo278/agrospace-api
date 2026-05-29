@@ -4,11 +4,14 @@ import br.com.fiap.agrospace.dto.request.AreaAgricolaRequest;
 import br.com.fiap.agrospace.dto.response.AreaAgricolaResponse;
 import br.com.fiap.agrospace.entity.AreaAgricola;
 import br.com.fiap.agrospace.entity.Fazenda;
+import br.com.fiap.agrospace.exception.ResourceNotFoundException;
 import br.com.fiap.agrospace.repository.AreaAgricolaRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -17,6 +20,7 @@ public class AreaAgricolaService {
     private final AreaAgricolaRepository areaAgricolaRepository;
     private final FazendaService fazendaService;
 
+    @CacheEvict(value = {"areasAgricolas", "areaAgricola"}, allEntries = true)
     public AreaAgricolaResponse criar(AreaAgricolaRequest request) {
         Fazenda fazenda = fazendaService.buscarEntidadePorId(request.fazendaId());
 
@@ -31,18 +35,19 @@ public class AreaAgricolaService {
         return toResponse(salva);
     }
 
-    public List<AreaAgricolaResponse> listar() {
-        return areaAgricolaRepository.findAll()
-                .stream()
-                .map(this::toResponse)
-                .toList();
+    @Cacheable(value = "areasAgricolas")
+    public Page<AreaAgricolaResponse> listar(Pageable pageable) {
+        return areaAgricolaRepository.findAll(pageable)
+                .map(this::toResponse);
     }
 
+    @Cacheable(value = "areaAgricola", key = "#id")
     public AreaAgricolaResponse buscarPorId(Long id) {
         AreaAgricola area = buscarEntidadePorId(id);
         return toResponse(area);
     }
 
+    @CacheEvict(value = {"areasAgricolas", "areaAgricola"}, allEntries = true)
     public AreaAgricolaResponse atualizar(Long id, AreaAgricolaRequest request) {
         AreaAgricola area = buscarEntidadePorId(id);
         Fazenda fazenda = fazendaService.buscarEntidadePorId(request.fazendaId());
@@ -56,6 +61,7 @@ public class AreaAgricolaService {
         return toResponse(atualizada);
     }
 
+    @CacheEvict(value = {"areasAgricolas", "areaAgricola"}, allEntries = true)
     public void deletar(Long id) {
         AreaAgricola area = buscarEntidadePorId(id);
         areaAgricolaRepository.delete(area);
@@ -63,7 +69,7 @@ public class AreaAgricolaService {
 
     public AreaAgricola buscarEntidadePorId(Long id) {
         return areaAgricolaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Área agrícola não encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Área agrícola não encontrada"));
     }
 
     private AreaAgricolaResponse toResponse(AreaAgricola area) {
