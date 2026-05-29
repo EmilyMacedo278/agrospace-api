@@ -1,15 +1,15 @@
 package br.com.fiap.agrospace.entity;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "tb_fazenda")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -22,8 +22,8 @@ public class Fazenda {
     @Column(nullable = false, length = 120)
     private String nome;
 
-    @Column(nullable = false, length = 160)
-    private String localizacao;
+    @Embedded
+    private Localizacao localizacao;
 
     @Column(nullable = false, length = 120)
     private String responsavel;

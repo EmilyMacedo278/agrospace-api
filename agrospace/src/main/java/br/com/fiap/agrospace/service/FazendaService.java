@@ -3,6 +3,7 @@ package br.com.fiap.agrospace.service;
 import br.com.fiap.agrospace.dto.request.FazendaRequest;
 import br.com.fiap.agrospace.dto.response.FazendaResponse;
 import br.com.fiap.agrospace.entity.Fazenda;
+import br.com.fiap.agrospace.entity.Localizacao;
 import br.com.fiap.agrospace.exception.ResourceNotFoundException;
 import br.com.fiap.agrospace.repository.FazendaRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +20,11 @@ public class FazendaService {
     public FazendaResponse criar(FazendaRequest request) {
         Fazenda fazenda = Fazenda.builder()
                 .nome(request.nome())
-                .localizacao(request.localizacao())
+                .localizacao(new Localizacao(
+                        request.cidade(),
+                        request.estado(),
+                        request.pais()
+                ))
                 .responsavel(request.responsavel())
                 .build();
 
@@ -43,7 +48,11 @@ public class FazendaService {
         Fazenda fazenda = buscarEntidadePorId(id);
 
         fazenda.setNome(request.nome());
-        fazenda.setLocalizacao(request.localizacao());
+        fazenda.setLocalizacao(new Localizacao(
+                request.cidade(),
+                request.estado(),
+                request.pais()
+        ));
         fazenda.setResponsavel(request.responsavel());
 
         Fazenda atualizada = fazendaRepository.save(fazenda);
@@ -57,13 +66,16 @@ public class FazendaService {
 
     public Fazenda buscarEntidadePorId(Long id) {
         return fazendaRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Fazenda não encontrada"));    }
+                .orElseThrow(() -> new ResourceNotFoundException("Fazenda não encontrada"));
+    }
 
     private FazendaResponse toResponse(Fazenda fazenda) {
         return new FazendaResponse(
                 fazenda.getId(),
                 fazenda.getNome(),
-                fazenda.getLocalizacao(),
+                fazenda.getLocalizacao().getCidade(),
+                fazenda.getLocalizacao().getEstado(),
+                fazenda.getLocalizacao().getPais(),
                 fazenda.getResponsavel()
         );
     }
