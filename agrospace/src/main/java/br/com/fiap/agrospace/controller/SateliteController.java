@@ -5,12 +5,11 @@ import br.com.fiap.agrospace.dto.response.SateliteResponse;
 import br.com.fiap.agrospace.service.SateliteService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.hateoas.CollectionModel;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
@@ -30,16 +29,9 @@ public class SateliteController {
     }
 
     @GetMapping
-    public CollectionModel<EntityModel<SateliteResponse>> listar() {
-        List<EntityModel<SateliteResponse>> satelites = sateliteService.listar()
-                .stream()
-                .map(this::adicionarLinks)
-                .toList();
-
-        return CollectionModel.of(
-                satelites,
-                linkTo(methodOn(SateliteController.class).listar()).withSelfRel()
-        );
+    public Page<EntityModel<SateliteResponse>> listar(Pageable pageable) {
+        return sateliteService.listar(pageable)
+                .map(this::adicionarLinks);
     }
 
     @GetMapping("/{id}")
@@ -67,7 +59,7 @@ public class SateliteController {
         return EntityModel.of(
                 response,
                 linkTo(methodOn(SateliteController.class).buscarPorId(response.id())).withSelfRel(),
-                linkTo(methodOn(SateliteController.class).listar()).withRel("todos-os-satelites")
+                linkTo(methodOn(SateliteController.class).listar(null)).withRel("todos-os-satelites")
         );
     }
 }

@@ -6,9 +6,11 @@ import br.com.fiap.agrospace.entity.Satelite;
 import br.com.fiap.agrospace.exception.ResourceNotFoundException;
 import br.com.fiap.agrospace.repository.SateliteRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -16,6 +18,7 @@ public class SateliteService {
 
     private final SateliteRepository sateliteRepository;
 
+    @CacheEvict(value = {"satelites", "satelite"}, allEntries = true)
     public SateliteResponse criar(SateliteRequest request) {
         Satelite satelite = Satelite.builder()
                 .nome(request.nome())
@@ -27,18 +30,19 @@ public class SateliteService {
         return toResponse(salvo);
     }
 
-    public List<SateliteResponse> listar() {
-        return sateliteRepository.findAll()
-                .stream()
-                .map(this::toResponse)
-                .toList();
+    @Cacheable(value = "satelites")
+    public Page<SateliteResponse> listar(Pageable pageable) {
+        return sateliteRepository.findAll(pageable)
+                .map(this::toResponse);
     }
 
+    @Cacheable(value = "satelite", key = "#id")
     public SateliteResponse buscarPorId(Long id) {
         Satelite satelite = buscarEntidadePorId(id);
         return toResponse(satelite);
     }
 
+    @CacheEvict(value = {"satelites", "satelite"}, allEntries = true)
     public SateliteResponse atualizar(Long id, SateliteRequest request) {
         Satelite satelite = buscarEntidadePorId(id);
 
@@ -50,6 +54,7 @@ public class SateliteService {
         return toResponse(atualizado);
     }
 
+    @CacheEvict(value = {"satelites", "satelite"}, allEntries = true)
     public void deletar(Long id) {
         Satelite satelite = buscarEntidadePorId(id);
         sateliteRepository.delete(satelite);
@@ -57,8 +62,8 @@ public class SateliteService {
 
     public Satelite buscarEntidadePorId(Long id) {
         return sateliteRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Satélite não encontrado"
-));    }
+                .orElseThrow(() -> new ResourceNotFoundException("Satélite não encontrado"));
+    }
 
     private SateliteResponse toResponse(Satelite satelite) {
         return new SateliteResponse(
